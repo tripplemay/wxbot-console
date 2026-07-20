@@ -73,6 +73,24 @@ cp .env.example .env.local   # 按需修改
 | Usage & Billing | `GET /v1/admin/billing-summary` |
 | Channel Health | `GET /v1/admin/channel-health` |
 
-## 后续(v2)
+## 租户自助端(v2)
 
-租户自助端:平台侧补租户隔离授权(`verifyApiKey` 按 tenantId 校验)、角色强制、租户自助注册;控制台增加租户视图与 webhook/邀请码自助配置。
+`/tenant/*` 区,与运营端并存,独立登录(cookie `tenant_session`)。租户自助注册(建租户 + owner,scrypt)、登录后管理自己的应用与接入。**隔离**:BFF 校验租户会话后,注入 session 的 tenantId 并对 app 归属做校验(操作非自己的资源 → 403),后端 `assertAppInTenant` 兜底。
+
+- 注册开关:`TENANT_SIGNUP_ENABLED=false` 可关闭自助注册。
+- 登录:`/tenant/sign-in`;注册:`/tenant/sign-up`;首个 owner 由注册创建。
+
+| 页面 | BFF(均按 session tenantId 作用域) |
+|------|-------------------------------------|
+| Dashboard | `/api/tenant/me` |
+| My Apps | `/api/tenant/apps`(建/启停,自动置备默认 workspace)、`/api/tenant/webhooks`(配 URL) |
+| Invite Codes | `/api/tenant/invites`(生成/列表;rawCode 只显示一次) |
+| Bindings | `/api/tenant/bindings`(绑到本租户 app 的微信用户) |
+| Usage | `/api/tenant/usage`(本租户 billing summary) |
+
+对应平台端点:`POST /v1/tenant/{signup,login}`、`GET /v1/admin/{invite-codes,webhook-endpoints,bindings}`(带 tenantId/appId 过滤)、`GET /v1/admin/{usage,billing-summary}?tenantId=`。
+
+### 已知限制 / 后续(v2.1)
+- **Webhook 签名密钥**:租户配置 URL + secretRef(名称),实际密钥仍由运营方经 env/Vault 置备(平台的 secret resolver 模型)。后续可支持平台存储并 show-once 的内联密钥。
+- **租户隔离目前由 BFF 强制**(BFF 持 admin key、注入 tenantId + 归属校验);后续可在平台侧引入按 tenantId 校验的租户作用域 API key,做到后端强隔离(不依赖 BFF)。
+- **多成员/角色**:v2 只有注册即建的 owner;邀请更多成员、角色强制(admin/developer/viewer)待补。

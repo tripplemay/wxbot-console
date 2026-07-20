@@ -193,8 +193,8 @@ const Navbar = (props: {
             }
           }}
         ></div>
-        {/* Profile & Dropdown */}
-        <OperatorMenu />
+        {/* Profile & Dropdown (operator by default; tenant layout passes its own) */}
+        {props.menu ?? <OperatorMenu />}
       </div>
     </nav>
   );

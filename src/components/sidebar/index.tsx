@@ -89,9 +89,9 @@ function SidebarHorizon(props: { routes: IRoute[]; [x: string]: any }) {
                 <Links mini={mini} hovered={hovered} routes={routes} />
               </ul>
             </div>
-            {/* Operator identity */}
+            {/* Identity footer (operator by default; tenant layout passes its own) */}
             <div className="mb-[30px] mt-[28px]">
-              <SidebarOperator />
+              {props.footer ?? <SidebarOperator />}
             </div>
           </div>
         </Scrollbars>
